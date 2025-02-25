@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tableau de Bord - Malicious URL Detector</title>
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+    <h1>Tableau de Bord</h1>
+    <label>
+        <input type="checkbox" id="toggleProtection"> Protection en temps réel
+    </label>
+
+    <h2>Liste des sites bloqués récemment</h2>
+    <ul id="blockedList"></ul>
+
+    <h2>Gérer la liste noire</h2>
+    <input type="text" id="blacklistUrl" placeholder="Ajouter une URL">
+    <button id="addToBlacklist">Ajouter</button>
+    <ul id="blacklist"></ul>
+
+    <script src="dashboard.js"></script>
+</body>
+</html>

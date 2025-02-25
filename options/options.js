@@ -19,3 +19,14 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
   
+  document.addEventListener("DOMContentLoaded", () => {
+    let strictModeCheckbox = document.getElementById("strictMode");
+
+    chrome.storage.sync.get(["strictMode"], (data) => {
+        strictModeCheckbox.checked = data.strictMode ?? false;
+    });
+
+    strictModeCheckbox.addEventListener("change", () => {
+        chrome.storage.sync.set({ strictMode: strictModeCheckbox.checked });
+    });
+});

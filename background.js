@@ -77,12 +77,28 @@ function isSuspicious(url) {
 
   function notifyUser(url) {
     chrome.notifications.create({
-      type: "basic",
-      iconUrl: "icons/warning.png",
-      title: "URL Suspecte Détectée",
-      message: `L'accès à ${url} a été bloqué pour votre sécurité.`
+        type: "basic",
+        iconUrl: "icons/warning.png",
+        title: "Site dangereux détecté !",
+        message: `L'accès à ${url} a été bloqué.`,
+        buttons: [{ title: "Voir plus" }],
+        priority: 2
     });
-  }
+
+    chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
+        if (btnIdx === 0) {
+            chrome.tabs.create({ url: "dashboard.html" });
+        }
+    });
+
+    // Sauvegarde l'URL bloquée
+    chrome.storage.local.get(["blockedUrls"], (data) => {
+        let urls = data.blockedUrls || [];
+        urls.push(url);
+        chrome.storage.local.set({ blockedUrls: urls.slice(-10) }); // Garde seulement les 10 derniers
+    });
+}
+
   
   chrome.webRequest.onBeforeRequest.addListener(
     async (details) => {
@@ -96,3 +112,62 @@ function isSuspicious(url) {
     ["blocking"]
   );
   
+  const VIRUSTOTAL_API_KEY = "TON_CLE_API_VIRUSTOTAL";
+const VIRUSTOTAL_URL = "https://www.virustotal.com/api/v3/urls";
+
+async function checkWithVirusTotal(url) {
+    try {
+        let response = await fetch(VIRUSTOTAL_URL, {
+            method: "POST",
+            headers: {
+                "x-apikey": VIRUSTOTAL_API_KEY,
+                "Content-Type": "application/x-www-form-urlencoded"
+            },
+            body: new URLSearchParams({ url: url })
+        });
+
+        let data = await response.json();
+        return data.data?.attributes?.last_analysis_stats?.malicious > 0;
+    } catch (error) {
+        console.error("Erreur VirusTotal :", error);
+        return false;
+    }
+}
+
+chrome.webRequest.onBeforeRequest.addListener(
+    async (details) => {
+        let isMalicious = await checkWithVirusTotal(details.url);
+        if (isMalicious) {
+            notifyUser(details.url);
+            return { cancel: true };
+        }
+    },
+    { urls: ["<all_urls>"] },
+    ["blocking"]
+);
+
+chrome.webRequest.onBeforeRequest.addListener(
+    async (details) => {
+        let { strictMode } = await chrome.storage.sync.get(["strictMode"]);
+        let isWhitelisted = await isInWhitelist(details.url);
+
+        if (strictMode && !isWhitelisted) {
+            notifyUser(details.url);
+            return { cancel: true };
+        }
+    },
+    { urls: ["<all_urls>"] },
+    ["blocking"]
+);
+
+chrome.webRequest.onBeforeRequest.addListener(
+    async (details) => {
+        let isSuspicious = await predictURL(details.url);
+        if (isSuspicious) {
+            notifyUser(details.url);
+            return { cancel: true };
+        }
+    },
+    { urls: ["<all_urls>"] },
+    ["blocking"]
+);
