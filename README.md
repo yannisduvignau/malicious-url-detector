@@ -1,7 +1,7 @@
-### Project Overview
+# Project Overview
 The Malicious URL Detector is a browser extension that analyzes URLs in real time using reputation-based analysis and heuristic detection methods.
 
-### Features
+## Features
 1. Real-Time URL Scanning
 Check URLs against a reputation database (e.g., Google Safe Browsing API).
 Use heuristic methods (e.g., detecting typosquatting, suspicious patterns).
@@ -17,13 +17,13 @@ Maintain a custom blacklist for known bad sites.
 4. Lightweight & Fast
 Ensure minimal impact on browser performance.
 
-### Tech Stack
+## Tech Stack
  - JavaScript (Vanilla JS or React for UI)
  - WebExtensions API (Chrome, Firefox support)
  - Google Safe Browsing API / VirusTotal API (for reputation analysis)
  - IndexedDB / Local Storage (for storing user preferences, whitelist/blacklist)
 
-### Implementation Plan
+## Implementation Plan
 1. Background Script
 Monitors browser navigation events (webRequest.onBeforeRequest).
 Sends URLs to an API (e.g., Google Safe Browsing) for validation.
@@ -55,7 +55,7 @@ Manages the whitelist and blacklist.
     └── icons/               # Extension icons
 ```
 
-### Conclusion
+## Conclusion
 The Malicious URL Detector project offers effective protection against dangerous sites by combining :
 
  - Heuristic analysis (homoglyphs, phishing).
