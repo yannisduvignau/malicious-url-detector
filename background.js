@@ -1,6 +1,5 @@
 const API_KEY = "YOUR_GOOGLE_SAFE_BROWSING_API_KEY";
-const CHECK_URL =
-  "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=" + API_KEY;
+const CHECK_URL = "https://safebrowsing.googleapis.com/v4/threatMatches:find?key=" + API_KEY;
 const VIRUSTOTAL_API_KEY = "YOUR_VIRUSTOTAL_API_KEY";
 const VIRUSTOTAL_URL = "https://www.virustotal.com/api/v3/urls";
 
@@ -24,9 +23,9 @@ async function checkURL(url) {
     });
 
     let data = await response.json();
-    return data.matches ? true : false;
+    return data.matches && data.matches.length > 0; // Renvoi vrai si des correspondances sont trouvées
   } catch (error) {
-    console.error("Error checking URL:", error);
+    console.error("Error checking URL with Google Safe Browsing:", error);
     return false;
   }
 }
@@ -34,13 +33,13 @@ async function checkURL(url) {
 // Fonction pour vérifier les URL via VirusTotal API
 async function checkWithVirusTotal(url) {
   try {
-    let response = await fetch(VIRUSTOTAL_URL, {
-      method: "POST",
+    // Encode l'URL en base64 avant de l'envoyer à VirusTotal
+    let encodedUrl = btoa(url);
+    let response = await fetch(`${VIRUSTOTAL_URL}/${encodedUrl}`, {
+      method: "GET",
       headers: {
-        "x-apikey": VIRUSTOTAL_API_KEY,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({ url: url }),
+        "x-apikey": VIRUSTOTAL_API_KEY
+      }
     });
 
     let data = await response.json();
@@ -87,7 +86,7 @@ function notifyUser(url) {
     }
   });
 
-  // Le reste du code pour la notification
+  // Création d'une notification
   chrome.notifications.create({
     type: "basic",
     iconUrl: "icons/warning.png",
@@ -97,6 +96,7 @@ function notifyUser(url) {
     priority: 2
   });
 
+  // Gérer le bouton "Voir plus"
   chrome.notifications.onButtonClicked.addListener((notifId, btnIdx) => {
     if (btnIdx === 0) {
       chrome.tabs.create({ url: "dashboard.html" });
@@ -111,31 +111,16 @@ function notifyUser(url) {
   });
 }
 
-
 // Vérification de l'URL via les deux API et détection de la blacklist
 chrome.webRequest.onBeforeRequest.addListener(
   async (details) => {
     let isMalicious = await checkURL(details.url);
     let isVirusTotalMalicious = await checkWithVirusTotal(details.url);
     let isSuspiciousURL = isSuspicious(details.url);
+    let isBlacklisted = await isBlacklisted(details.url); // Vérifier si l'URL est dans la blacklist
 
-    // Si l'URL est malveillante ou suspecte, on la bloque
-    if (isMalicious || isVirusTotalMalicious || isSuspiciousURL) {
-      notifyUser(details.url);
-      return { cancel: true };
-    }
-  },
-  { urls: ["<all_urls>"] },
-  ["blocking"]
-);
-
-// Gestion du mode strict et de la whitelist
-chrome.webRequest.onBeforeRequest.addListener(
-  async (details) => {
-    let { strictMode } = await chrome.storage.sync.get(["strictMode"]);
-    let isWhitelisted = await isInWhitelist(details.url);
-
-    if (strictMode && !isWhitelisted) {
+    // Si l'URL est malveillante, suspecte ou blacklistée, on la bloque
+    if (isMalicious || isVirusTotalMalicious || isSuspiciousURL || isBlacklisted) {
       notifyUser(details.url);
       return { cancel: true };
     }
@@ -145,40 +130,35 @@ chrome.webRequest.onBeforeRequest.addListener(
 );
 
 // Vérification avec la base de données personnalisée (blacklist)
-async function isInBlacklist(url) {
-  let db = await openDatabase();
-  let tx = db.transaction("blacklist", "readonly");
-  let store = tx.objectStore("blacklist");
-  let result = await store.get(url);
-  return result !== undefined;
+async function isBlacklisted(url) {
+  return await isBlacklisted(url); // Appel à la fonction isBlacklisted définie dans database.js
 }
 
-// Vérification de l'URL par prédiction (fonction à définir selon tes besoins)
-async function predictURL(url) {
-  // Logique pour la prédiction d'URL (ex. via un modèle d'apprentissage machine)
-  // Placeholder pour la démonstration
-  return false;
+// Fonction pour ajouter une URL à la blacklist
+async function addToBlacklist(url) {
+  await addToBlacklist(url); // Appel à la fonction addToBlacklist définie dans database.js
 }
 
-// Fonction pour ouvrir une base de données IndexedDB (fonction à définir)
-async function openDatabase() {
-  // Code pour ouvrir une base de données IndexedDB
-  // Placeholder pour la démonstration
-  return new Promise((resolve) => {
-    let request = indexedDB.open("urlDatabase", 1);
-    request.onupgradeneeded = () => {
-      let db = request.result;
-      db.createObjectStore("blacklist", { keyPath: "url" });
-    };
-    request.onsuccess = () => resolve(request.result);
-  });
-}
+self.addEventListener("install", () => {
+  console.log("Service Worker installé.");
+});
 
-// Fonction pour vérifier si une URL est dans la whitelist
-async function isInWhitelist(url) {
-  let db = await openDatabase();
-  let tx = db.transaction("whitelist", "readonly");
-  let store = tx.objectStore("whitelist");
-  let result = await store.get(url);
-  return result !== undefined;
-}
+self.addEventListener("activate", () => {
+  console.log("Service Worker activé.");
+});
+
+chrome.runtime.onInstalled.addListener(() => {
+  console.log("Extension installée !");
+});
+
+// Définir une règle dynamique pour bloquer un site spécifique
+chrome.declarativeNetRequest.updateDynamicRules({
+  addRules: [
+    {
+      "id": 1,
+      "priority": 1,
+      "action": { "type": "block" },
+      "condition": { "urlFilter": "*malicious-site.com*", "resourceTypes": ["main_frame"] }
+    }
+  ]
+});

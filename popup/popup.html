@@ -1,13 +1,72 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Malicious URL Detector</title>
-  <script src="popup.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      width: 300px;
+      padding: 10px;
+      box-sizing: border-box;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    #status {
+      font-size: 16px;
+      margin-bottom: 20px;
+      color: #444;
+    }
+
+    .warning {
+      color: red;
+      font-weight: bold;
+    }
+
+    .safe {
+      color: green;
+      font-weight: bold;
+    }
+
+    button {
+      padding: 8px 16px;
+      font-size: 14px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      margin-top: 10px;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    .error {
+      color: #ff4444;
+      margin-top: 10px;
+      text-align: center;
+    }
+  </style>
 </head>
 <body>
-  <h2>URL Status</h2>
-  <p id="status">Checking...</p>
+  <h2>Statut de l'URL</h2>
+  <p id="status">Vérification en cours...</p>
+  <div id="actionContainer" style="display:none;">
+    <button id="blockBtn">Bloquer cette URL</button>
+  </div>
+  <div id="errorMessage" class="error" style="display:none;">
+    <p>Une erreur est survenue pendant la vérification de l'URL.</p>
+  </div>
+
+  <script src="../database.js"></script>
+  <script src="popup.js"></script>
 </body>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
-<script src="ai.js"></script>
 </html>

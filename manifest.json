@@ -1,24 +1,48 @@
 {
   "manifest_version": 3,
   "name": "Malicious URL Detector",
-  "version": "1.1",
+  "version": "1.0",
+  "description": "Détecte les URLs malveillantes en temps réel.",
   "permissions": [
-    "webRequest",
-    "webRequestBlocking",
     "storage",
-    "tabs",
+    "activeTab",
+    "declarativeNetRequest",
     "notifications"
   ],
   "host_permissions": ["<all_urls>"],
-  "background": {
-    "service_worker": "background.js"
-  },
-  "incognito": "split",
+  "web_accessible_resources": [
+    {
+      "resources": ["libs/tf.min.js"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "background": "background.js",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ],
   "action": {
-    "default_popup": "popup/popup.html"
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon.svg"
+    }
   },
   "options_page": "options/options.html",
+  "icons": {
+    "16": "icons/icon.svg"
+  },
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "ruleset_1",
+        "enabled": true,
+        "path": "rules.json"
+      }
+    ]
+  },
   "content_security_policy": {
-    "extension_pages": "script-src 'self' 'unsafe-eval'; object-src 'self'"
+    "extension_pages": "script-src 'self'; object-src 'self'"
   }
 }
